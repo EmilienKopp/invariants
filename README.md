@@ -1,5 +1,11 @@
 # Splitstack Invariants
 
+[![Tests](https://github.com/EmilienKopp/invariants/actions/workflows/tests.yml/badge.svg)](https://github.com/EmilienKopp/invariants/actions/workflows/tests.yml)
+[![Latest Version](https://img.shields.io/packagist/v/splitstack/invariants.svg)](https://packagist.org/packages/splitstack/invariants)
+[![Total Downloads](https://img.shields.io/packagist/dt/splitstack/invariants.svg)](https://packagist.org/packages/splitstack/invariants)
+[![PHP Version](https://img.shields.io/packagist/php-v/splitstack/invariants.svg)](https://packagist.org/packages/splitstack/invariants)
+[![License](https://img.shields.io/packagist/l/splitstack/invariants.svg)](https://github.com/EmilienKopp/invariants/blob/main/LICENSE)
+
 Framework-free invariant enforcement with hydration policies. For lightweight
 domain modeling in PHP 8.4+.
 
@@ -13,6 +19,11 @@ domain modeling in PHP 8.4+.
 ```bash
 composer require splitstack/invariants
 ```
+
+## Disclaimer
+
+This package is in **alpha**. The API might evolve, and the docs might be incomplete. Please open an issue if you find a bug or have a feature request.
+We can't guarantee there won't be breaking changes, but we will try to keep them to a minimum and document them in the changelog.
 
 ## The two tiers
 
