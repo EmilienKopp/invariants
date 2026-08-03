@@ -14,6 +14,8 @@ class Invariant
     /** @var list<string> */
     private array $ignored = [];
 
+    private bool $violatedLastAssert = false;
+
     /**
      * @param  list<string>  $touches  attribute names on the subject the rule is applied to
      */
@@ -82,6 +84,7 @@ class Invariant
     {
         $subject ??= $this->model;
         $rule = $this->rule;
+        $this->violatedLastAssert = false;
 
         if ($this->touches !== []) {
             if ($subject === null) {
@@ -120,8 +123,15 @@ class Invariant
         $this->ignored = $ignored;
     }
 
+    public function wasViolated(): bool
+    {
+        return $this->violatedLastAssert;
+    }
+
     private function handleViolation(?EnforcesInvariants $subject = null): void
     {
+        $this->violatedLastAssert = true;
+
         try {
             match ($this->policy) {
                 HydrationPolicy::Strict => throw new \DomainException($this->message),
