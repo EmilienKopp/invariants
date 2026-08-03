@@ -173,6 +173,8 @@ $account = new Account(balance: -5);
 $account->assertInvariants(); // balance is now 0, no exception thrown
 ```
 
+Very useful for batch processing or when you have legacy data that you KNOW is wrong but still want to manipulate.
+
 ## Dispatching events on violation
 
 You can have a violated invariant fire an event through your own bus. The
