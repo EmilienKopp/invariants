@@ -1,0 +1,49 @@
+{
+  "name": "splitstack/invariants",
+  "description": "Framework-free invariant enforcement with hydration policies (Strict, Lenient, Quarantine, AutoCorrect). Extracted from splitstack/laravel-domainable.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "invariants",
+    "domain",
+    "ddd",
+    "validation",
+    "hydration"
+  ],
+  "autoload": {
+    "psr-4": {
+      "Splitstack\\Invariants\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Splitstack\\Invariants\\Tests\\": "tests/"
+    }
+  },
+  "authors": [
+    {
+      "name": "EmilienKopp",
+      "email": "emilien.kopp@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.4"
+  },
+  "require-dev": {
+    "pestphp/pest": "^3.0|^4.0|^5.0",
+    "phpstan/phpstan": "^2.2",
+    "laravel/pint": "^1.30"
+  },
+  "scripts": {
+    "lint": "vendor/bin/pint --parallel",
+    "type": "vendor/bin/phpstan analyse --memory-limit=2G",
+    "test": "vendor/bin/pest --colors=always"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

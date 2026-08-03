@@ -1,0 +1,7 @@
+parameters:
+    paths:
+        - src
+    level: 5
+    ignoreErrors:
+        # Traits are the package's public API; consumers use them, not src/.
+        - identifier: trait.unused
