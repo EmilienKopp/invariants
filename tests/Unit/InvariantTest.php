@@ -40,8 +40,8 @@ class Account implements EnforcesInvariants
 }
 
 /**
- * Exposes attributes through magic __get (like an Eloquent model), but has no
- * matching declared property and no __set — so AutoCorrect can read the value
+ * Exposes attributes through magic __get, but has no
+ * matching declared property and no __set so AutoCorrect can read the value
  * yet has nowhere to write the correction.
  */
 class MagicReadSubject implements EnforcesInvariants
@@ -143,6 +143,26 @@ it('Quarantine marks the subject instead of throwing', function () {
 
     expect($subject->isQuarantined())->toBeTrue();
 });
+
+it('captures $this as the subject when member of a class', function () {
+    $myclass = new class implements EnforcesInvariants
+    {
+        use AssertsInvariants;
+
+        public function __construct(public int $value = -1) {}
+
+        protected function valueNonNegative(): Invariant
+        {
+            return Invariant::make(
+                rule: fn ($v) => $v >= 0,
+                message: 'value must be non-negative',
+                touches: ['value'],
+            );
+        }
+    };
+
+    $myclass->assertInvariants();
+})->throws(InvariantViolationException::class, 'Invariant [valueNonNegative] violated: value must be non-negative');
 
 // ---------------------------------------------------------------------------
 // Constructor guards
