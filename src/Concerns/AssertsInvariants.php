@@ -19,11 +19,12 @@ use Splitstack\Invariants\Support\InvariantReflector;
  * assertInvariants() yourself at whatever boundary makes sense (end of a
  * mutating method, a service call, a request handler).
  *
- * When the class carries a {@see DispatchesEvents} attribute and an invariant
- * method carries an {@see InvariantEvent}
- * attribute, a violation of that invariant dispatches an event through your
- * bus. The package resolves the bus and calls it; it never implements the
- * dispatch itself.
+ * When the class carries a {@see DispatchesEvents} attribute, a violated
+ * invariant dispatches an event through your bus. The event comes from, in
+ * order: an event set on the rule (Invariant::make(event: ...), an object or a
+ * class-string), an {@see InvariantEvent} attribute on the method, or the
+ * built-in {@see InvariantViolated}. The package resolves the bus and calls it;
+ * it never implements the dispatch itself.
  *
  * @phpstan-require-implements EnforcesInvariants
  */
@@ -62,8 +63,47 @@ trait AssertsInvariants
 
         $declaration = InvariantReflector::event($this, $method);
 
-        if ($declaration === null) {
+        // Nothing to dispatch unless the method carries an #[InvariantEvent] or
+        // the rule was built with an event via Invariant::make(event: ...).
+        if ($declaration === null && $invariant->event === null) {
             return;
+        }
+
+        $event = $this->resolveEvent($declaration, $invariant, $method);
+
+        EventDispatcher::dispatch($dispatcher->dispatcher, $dispatcher->via, $event);
+    }
+
+    private function resolveEvent(?InvariantEvent $declaration, Invariant $invariant, string $method): object
+    {
+        // An event set directly on the rule wins: pass it through if it is
+        // already an instance, or build it from the touched fields if it is a
+        // class-string.
+        if ($invariant->event !== null) {
+            return is_object($invariant->event)
+                ? $invariant->event
+                : new $invariant->event(...$this->collectEventFields($declaration));
+        }
+
+        if ($declaration?->event !== null) {
+            return new $declaration->event(...$this->collectEventFields($declaration));
+        }
+
+        return new InvariantViolated(
+            subject: static::class,
+            invariant: $method,
+            message: $invariant->message,
+            data: $this->collectEventFields($declaration),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function collectEventFields(?InvariantEvent $declaration): array
+    {
+        if ($declaration === null) {
+            return [];
         }
 
         $fields = [];
@@ -71,15 +111,6 @@ trait AssertsInvariants
             $fields[$property] = $this->{$property} ?? null;
         }
 
-        $event = $declaration->event !== null
-            ? new $declaration->event(...$fields)
-            : new InvariantViolated(
-                subject: static::class,
-                invariant: $method,
-                message: $invariant->message,
-                data: $fields,
-            );
-
-        EventDispatcher::dispatch($dispatcher->dispatcher, $dispatcher->via, $event);
+        return $fields;
     }
 }

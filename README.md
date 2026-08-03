@@ -173,6 +173,95 @@ $account = new Account(balance: -5);
 $account->assertInvariants(); // balance is now 0, no exception thrown
 ```
 
+## Dispatching events on violation
+
+You can have a violated invariant fire an event through your own bus. The
+package never ships a bus and never implements the dispatch: you point it at a
+dispatcher class (and optionally a method name), and it resolves and calls it
+for you when `assertInvariants()` runs.
+
+Declare the dispatcher on the class and the payload on the invariant method:
+
+```php
+use Splitstack\Invariants\Attributes\DispatchesEvents;
+use Splitstack\Invariants\Attributes\InvariantEvent;
+
+#[DispatchesEvents(App\EventBus::class, via: 'dispatch')] // via defaults to 'dispatch'
+class ApprovalRequestEntity implements EnforcesInvariants
+{
+    use AssertsInvariants;
+
+    #[InvariantEvent(['id', 'status', 'applicantUserId'])]
+    protected function statusRequiresInProgress(): Invariant
+    {
+        return Invariant::make(
+            rule: fn ($v) => $this->status === ApprovalRequestStatus::IN_PROGRESS,
+            message: 'Not in progress',
+            touches: ['status'],
+            policy: HydrationPolicy::Quarantine,
+        );
+    }
+}
+```
+
+When `statusRequiresInProgress` is violated (for **any** policy, including the
+non-throwing ones), the package reads the named subject fields into a payload
+and hands it to `EventBus::dispatch($event)`.
+
+**Payload shape.** With just a field list, a built-in
+`Splitstack\Invariants\Events\InvariantViolated` event is dispatched:
+
+```php
+new InvariantViolated(
+    subject: ApprovalRequestEntity::class,
+    invariant: 'statusRequiresInProgress',
+    message: 'Not in progress',
+    data: ['id' => 1, 'status' => 'draft', 'applicantUserId' => 7],
+);
+```
+
+To dispatch your own domain event instead, name it. It's built with named args
+pulled from `with`, so its constructor params must match the property names:
+
+```php
+#[InvariantEvent(with: ['id', 'status'], event: App\Events\ApprovalStalled::class)]
+// dispatches: new ApprovalStalled(id: ..., status: ...)
+```
+
+**Setting the event on the rule.** You can skip the method attribute and hand
+`Invariant::make()` the event directly, either as a ready-made instance or a
+class-string. This wins over an `#[InvariantEvent]` on the method:
+
+```php
+protected function statusRequiresInProgress(): Invariant
+{
+    return Invariant::make(
+        rule: fn ($v) => $v === ApprovalRequestStatus::IN_PROGRESS,
+        message: 'Not in progress',
+        touches: ['status'],
+        policy: HydrationPolicy::Quarantine,
+        event: new App\Events\ApprovalStalled(id: $this->id, status: $this->status),
+    );
+}
+```
+
+An instance is dispatched as-is. A class-string is built with named args from an
+`#[InvariantEvent([...])]` field list if one is present, otherwise with no args.
+
+An invariant with no `#[InvariantEvent]` and no `event` on the rule dispatches
+nothing, even on a class that declares `#[DispatchesEvents]`.
+
+**Resolving the dispatcher.** By default, a static `via` method is called
+statically (`EventBus::dispatch($event)`); otherwise the package does
+`new EventBus()`. To use a container, register a resolver once at boot:
+
+```php
+use Splitstack\Invariants\Support\EventDispatcher;
+
+// e.g. in a Laravel service provider
+EventDispatcher::resolveUsing(fn (string $class) => app($class));
+```
+
 ## Contract
 
 `EnforcesInvariants` is a three-method interface: `assertInvariants()`,

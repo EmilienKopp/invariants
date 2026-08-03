@@ -25,7 +25,8 @@ class Invariant
         public readonly mixed $default = null,
         public readonly array $touches = [],
         public readonly HydrationPolicy $policy = HydrationPolicy::Strict,
-        public readonly mixed $model = null
+        public readonly mixed $model = null,
+        public readonly mixed $event = null,
     ) {
         if ($this->policy === HydrationPolicy::AutoCorrect && $this->touches === []) {
             throw new \RuntimeException('AutoCorrect policy requires at least one touched property to correct.');
@@ -43,7 +44,7 @@ class Invariant
     /**
      * @param  list<string>  $touches
      */
-    public static function make(Closure $rule, string $message, mixed $default = null, ?array $touches = [], ?HydrationPolicy $policy = HydrationPolicy::Strict): self
+    public static function make(Closure $rule, string $message, mixed $default = null, ?array $touches = [], ?HydrationPolicy $policy = HydrationPolicy::Strict, mixed $event = null): self
     {
         return new self(
             rule: $rule,
@@ -51,6 +52,7 @@ class Invariant
             message: $message,
             touches: $touches,
             policy: $policy,
+            event: $event,
         );
     }
 
@@ -63,6 +65,7 @@ class Invariant
             message: $this->message,
             policy: $this->policy,
             model: $model,
+            event: $this->event,
         );
     }
 
@@ -74,6 +77,8 @@ class Invariant
             default: $data['default'],
             message: $data['message'],
             policy: $data['policy'] ?? HydrationPolicy::Strict,
+            model: $data['model'] ?? null,
+            event: $data['event'] ?? null,
         );
     }
 
@@ -154,7 +159,7 @@ class Invariant
 
         foreach ($this->touches as $property) {
             // A real declared property, or an attribute exposed through a magic
-            // __set (Eloquent models, proxies) — property_exists() alone is false
+            // __set (Eloquent models, proxies). property_exists() alone is false
             // for the latter even though the write succeeds.
             if (property_exists($subject, $property) || method_exists($subject, '__set')) {
                 $subject->{$property} = $this->default;

@@ -123,6 +123,47 @@ class StaticDispatchApproval implements EnforcesInvariants
     }
 }
 
+/** Event instance passed directly on the rule, no method attribute needed. */
+#[DispatchesEvents(SpyBus::class)]
+class DirectEventApproval implements EnforcesInvariants
+{
+    use AssertsInvariants;
+
+    public function __construct(public int $id = 1, public string $status = 'draft') {}
+
+    protected function statusRequiresInProgress(): Invariant
+    {
+        return Invariant::make(
+            rule: fn ($v) => $v === 'in_progress',
+            message: 'Not in progress',
+            touches: ['status'],
+            policy: HydrationPolicy::Quarantine,
+            event: new ApprovalStalled(id: 99, status: 'draft'),
+        );
+    }
+}
+
+/** Class-string on the rule plus an attribute supplying the constructor fields. */
+#[DispatchesEvents(SpyBus::class)]
+class DirectEventClassApproval implements EnforcesInvariants
+{
+    use AssertsInvariants;
+
+    public function __construct(public int $id = 5, public string $status = 'draft') {}
+
+    #[InvariantEvent(['id', 'status'])]
+    protected function statusRequiresInProgress(): Invariant
+    {
+        return Invariant::make(
+            rule: fn ($v) => $v === 'in_progress',
+            message: 'Not in progress',
+            touches: ['status'],
+            policy: HydrationPolicy::Quarantine,
+            event: ApprovalStalled::class,
+        );
+    }
+}
+
 /** No InvariantEvent attribute, so nothing should be dispatched. */
 #[DispatchesEvents(SpyBus::class)]
 class SilentApproval implements EnforcesInvariants
@@ -203,6 +244,28 @@ it('uses a registered resolver to build the dispatcher instance', function () {
 
     expect($built)->toBe([SpyBus::class])
         ->and(SpyBus::$events)->toHaveCount(1);
+});
+
+it('dispatches an event instance set directly on the rule, without a method attribute', function () {
+    (new DirectEventApproval)->assertInvariants();
+
+    expect(SpyBus::$events)->toHaveCount(1);
+
+    $event = SpyBus::$events[0];
+    expect($event)->toBeInstanceOf(ApprovalStalled::class)
+        ->and($event->id)->toBe(99)
+        ->and($event->status)->toBe('draft');
+});
+
+it('builds a class-string event set on the rule from the attribute fields', function () {
+    (new DirectEventClassApproval(id: 5, status: 'draft'))->assertInvariants();
+
+    expect(SpyBus::$events)->toHaveCount(1);
+
+    $event = SpyBus::$events[0];
+    expect($event)->toBeInstanceOf(ApprovalStalled::class)
+        ->and($event->id)->toBe(5)
+        ->and($event->status)->toBe('draft');
 });
 
 it('dispatches nothing when the invariant method has no InvariantEvent attribute', function () {
