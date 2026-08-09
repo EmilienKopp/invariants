@@ -4,7 +4,10 @@ namespace Splitstack\Invariants\Contracts;
 
 interface EnforcesInvariants
 {
-    public function assertInvariants(): void;
+    /**
+     * @param  list<string>|null  $touches  property names to filter by, or null for all
+     */
+    public function assertInvariants(?array $touches = null): void;
 
     public function quarantine(string $reason): void;
 

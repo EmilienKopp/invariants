@@ -32,12 +32,24 @@ trait AssertsInvariants
 {
     use HasQuarantine;
 
-    public function assertInvariants(): void
+    /**
+     * Runs every discovered invariant. Pass $touches to run only those whose
+     * rule reads at least one of the named properties; null (the default) runs
+     * all of them. A touchless invariant is never selected by a filter, since
+     * it declares no properties to match against.
+     *
+     * @param  list<string>|null  $touches  property names to filter by, or null for all
+     */
+    public function assertInvariants(?array $touches = null): void
     {
         $dispatcher = InvariantReflector::dispatcher($this);
 
         foreach (InvariantReflector::scan($this) as $label => $method) {
             $invariant = $this->{$method}();
+
+            if ($touches !== null && array_intersect($touches, $invariant->touches) === []) {
+                continue;
+            }
 
             try {
                 $invariant->assert($this);
