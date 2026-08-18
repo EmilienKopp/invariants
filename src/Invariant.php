@@ -158,9 +158,6 @@ class Invariant
         }
 
         foreach ($this->touches as $property) {
-            // A real declared property, or an attribute exposed through a magic
-            // __set (Eloquent models, proxies). property_exists() alone is false
-            // for the latter even though the write succeeds.
             if (property_exists($subject, $property) || method_exists($subject, '__set')) {
                 $subject->{$property} = $this->default;
             } else {
@@ -171,8 +168,6 @@ class Invariant
 
     private function handleLenient(?EnforcesInvariants $subject = null): void
     {
-        // No throw, accept the value as is
-        // Keep on the class to it stops throwing after encountered once
         $this->ignored = $this->violated;
     }
 

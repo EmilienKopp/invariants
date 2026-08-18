@@ -10,10 +10,6 @@ use Splitstack\Invariants\HydrationPolicy;
 use Splitstack\Invariants\Invariant;
 use Splitstack\Invariants\Support\EventDispatcher;
 
-/**
- * A spy bus recording every event it is handed, both as an instance method and
- * a static one, so the tests can assert what got dispatched.
- */
 class SpyBus
 {
     /** @var list<object> */
@@ -35,7 +31,6 @@ class SpyBus
     }
 }
 
-/** A domain event with named constructor params matching the `with` fields. */
 final class ApprovalStalled
 {
     public function __construct(
@@ -123,7 +118,6 @@ class StaticDispatchApproval implements EnforcesInvariants
     }
 }
 
-/** Event instance passed directly on the rule, no method attribute needed. */
 #[DispatchesEvents(SpyBus::class)]
 class DirectEventApproval implements EnforcesInvariants
 {
@@ -143,7 +137,6 @@ class DirectEventApproval implements EnforcesInvariants
     }
 }
 
-/** Class-string on the rule plus an attribute supplying the constructor fields. */
 #[DispatchesEvents(SpyBus::class)]
 class DirectEventClassApproval implements EnforcesInvariants
 {
@@ -164,7 +157,6 @@ class DirectEventClassApproval implements EnforcesInvariants
     }
 }
 
-/** No InvariantEvent attribute, so nothing should be dispatched. */
 #[DispatchesEvents(SpyBus::class)]
 class SilentApproval implements EnforcesInvariants
 {

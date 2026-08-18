@@ -12,19 +12,8 @@ use Splitstack\Invariants\Support\EventDispatcher;
 use Splitstack\Invariants\Support\InvariantReflector;
 
 /**
- * Opt-in convenience: auto-discovers every method on the class whose return
- * type is Invariant and runs them all through assertInvariants().
- *
- * This is the "auto-discovery" magic. It does NOT auto-invoke: call
- * assertInvariants() yourself at whatever boundary makes sense (end of a
- * mutating method, a service call, a request handler).
- *
- * When the class carries a {@see DispatchesEvents} attribute, a violated
- * invariant dispatches an event through your bus. The event comes from, in
- * order: an event set on the rule (Invariant::make(event: ...), an object or a
- * class-string), an {@see InvariantEvent} attribute on the method, or the
- * built-in {@see InvariantViolated}. The package resolves the bus and calls it;
- * it never implements the dispatch itself.
+ * Auto-discovers every method returning Invariant and runs them through
+ * assertInvariants(). Does not auto-invoke; call assertInvariants() yourself.
  *
  * @phpstan-require-implements EnforcesInvariants
  */
@@ -33,10 +22,7 @@ trait AssertsInvariants
     use HasQuarantine;
 
     /**
-     * Runs every discovered invariant. Pass $touches to run only those whose
-     * rule reads at least one of the named properties; null (the default) runs
-     * all of them. A touchless invariant is never selected by a filter, since
-     * it declares no properties to match against.
+     * Runs every discovered invariant, optionally filtered by touched properties.
      *
      * @param  list<string>|null  $touches  property names to filter by, or null for all
      */
@@ -54,8 +40,6 @@ trait AssertsInvariants
             try {
                 $invariant->assert($this);
             } catch (\DomainException|\LogicException $e) {
-                // A Strict violation throws before we can read wasViolated(),
-                // so dispatch here too, then re-raise as the package exception.
                 $this->dispatchInvariantEvent($dispatcher, $method, $invariant);
 
                 throw new InvariantViolationException($label, $e->getMessage(), $e);
@@ -75,8 +59,6 @@ trait AssertsInvariants
 
         $declaration = InvariantReflector::event($this, $method);
 
-        // Nothing to dispatch unless the method carries an #[InvariantEvent] or
-        // the rule was built with an event via Invariant::make(event: ...).
         if ($declaration === null && $invariant->event === null) {
             return;
         }
@@ -88,9 +70,6 @@ trait AssertsInvariants
 
     private function resolveEvent(?InvariantEvent $declaration, Invariant $invariant, string $method): object
     {
-        // An event set directly on the rule wins: pass it through if it is
-        // already an instance, or build it from the touched fields if it is a
-        // class-string.
         if ($invariant->event !== null) {
             return is_object($invariant->event)
                 ? $invariant->event

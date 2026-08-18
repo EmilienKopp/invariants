@@ -9,8 +9,7 @@ use Splitstack\Invariants\Attributes\InvariantEvent;
 use Splitstack\Invariants\Invariant;
 
 /**
- * Discovers the invariants of a class by scanning for methods whose return
- * type is {@see Invariant}. Framework-free.
+ * Discovers invariants by scanning for methods whose return type is {@see Invariant}.
  */
 final class InvariantReflector
 {

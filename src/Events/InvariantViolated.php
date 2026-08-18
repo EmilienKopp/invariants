@@ -5,9 +5,7 @@ namespace Splitstack\Invariants\Events;
 use Splitstack\Invariants\Attributes\InvariantEvent;
 
 /**
- * The built-in event dispatched when an invariant is violated and its method
- * carries an {@see InvariantEvent} attribute
- * without naming its own event class.
+ * Default event dispatched on violation when no custom event class is named.
  */
 final class InvariantViolated
 {

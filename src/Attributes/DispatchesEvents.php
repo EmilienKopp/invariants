@@ -5,11 +5,8 @@ namespace Splitstack\Invariants\Attributes;
 use Attribute;
 
 /**
- * Class-level declaration of which dispatcher to hand invariant events to and
- * which method to call on it.
- *
- *   #[DispatchesEvents(Acme\EventBus::class, via: 'dispatch')]
- *   class ApprovalRequestEntity implements EnforcesInvariants { ... }
+ * Class-level declaration of which dispatcher to hand invariant events to
+ * and which method to call on it.
  */
 #[Attribute(Attribute::TARGET_CLASS)]
 final class DispatchesEvents

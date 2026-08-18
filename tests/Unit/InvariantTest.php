@@ -6,10 +6,6 @@ use Splitstack\Invariants\Exceptions\InvariantViolationException;
 use Splitstack\Invariants\HydrationPolicy;
 use Splitstack\Invariants\Invariant;
 
-/**
- * A plain (non-framework) subject. Implementing EnforcesInvariants via the
- * traits is all it takes to be usable with touched rules and policies.
- */
 class Subject implements EnforcesInvariants
 {
     use AssertsInvariants;
@@ -20,9 +16,6 @@ class Subject implements EnforcesInvariants
     ) {}
 }
 
-/**
- * Demonstrates auto-discovery: the invariant method is found by reflection.
- */
 class Account implements EnforcesInvariants
 {
     use AssertsInvariants;
@@ -40,9 +33,8 @@ class Account implements EnforcesInvariants
 }
 
 /**
- * Exposes attributes through magic __get, but has no
- * matching declared property and no __set so AutoCorrect can read the value
- * yet has nowhere to write the correction.
+ * Readable via magic __get but with no declared property and no __set,
+ * so AutoCorrect has nowhere to write the correction.
  */
 class MagicReadSubject implements EnforcesInvariants
 {
@@ -53,10 +45,6 @@ class MagicReadSubject implements EnforcesInvariants
         return null;
     }
 }
-
-// ---------------------------------------------------------------------------
-// Tier 1 — core, manual, no reflection
-// ---------------------------------------------------------------------------
 
 it('passes a touchless rule without a subject', function () {
     Invariant::make(rule: fn () => true, message: 'ok')->assert();
@@ -83,10 +71,6 @@ it('requires a subject for a touched rule', function () {
         touches: ['value'],
     )->assert();
 })->throws(RuntimeException::class);
-
-// ---------------------------------------------------------------------------
-// Policies
-// ---------------------------------------------------------------------------
 
 it('AutoCorrect rewrites a violated property to the default', function () {
     $subject = new Subject(value: -1);
@@ -125,7 +109,7 @@ it('Lenient does not throw and stays silent on repeat', function () {
     );
 
     $invariant->assert($subject);
-    $invariant->assert($subject); // value now ignored, still no throw
+    $invariant->assert($subject);
 
     expect($subject->isQuarantined())->toBeFalse()
         ->and($invariant->getIgnored())->toBe(['value']);
@@ -164,10 +148,6 @@ it('captures $this as the subject when member of a class', function () {
     $myclass->assertInvariants();
 })->throws(InvariantViolationException::class, 'Invariant [valueNonNegative] violated: value must be non-negative');
 
-// ---------------------------------------------------------------------------
-// Constructor guards
-// ---------------------------------------------------------------------------
-
 it('rejects AutoCorrect without touches', function () {
     Invariant::make(rule: fn () => true, message: 'x', default: 1, policy: HydrationPolicy::AutoCorrect);
 })->throws(RuntimeException::class);
@@ -179,10 +159,6 @@ it('rejects AutoCorrect without a default', function () {
 it('rejects Lenient without touches', function () {
     Invariant::make(rule: fn () => true, message: 'x', policy: HydrationPolicy::Lenient);
 })->throws(RuntimeException::class);
-
-// ---------------------------------------------------------------------------
-// Tier 2 — reflection auto-discovery (opt-in), no proxy
-// ---------------------------------------------------------------------------
 
 it('auto-discovers and runs invariant methods via assertInvariants()', function () {
     (new Account(balance: -5))->assertInvariants();

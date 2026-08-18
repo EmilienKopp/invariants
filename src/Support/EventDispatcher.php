@@ -6,17 +6,7 @@ use Closure;
 use ReflectionMethod;
 
 /**
- * Bridges the package to whatever bus you point it at. It resolves the
- * dispatcher class and calls the configured method with the event. It does not
- * implement any dispatch logic of its own.
- *
- * Resolution order:
- *   1. If the target method is static, call it statically ($class::$via($e)).
- *   2. Else if a resolver is registered, use it to build the instance.
- *   3. Else `new $class()`.
- *
- * Wire a container in one line (e.g. in a Laravel service provider):
- *   EventDispatcher::resolveUsing(fn (string $c) => app($c));
+ * Resolves the dispatcher class and calls the configured method with the event.
  */
 final class EventDispatcher
 {

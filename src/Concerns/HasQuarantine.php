@@ -5,11 +5,7 @@ namespace Splitstack\Invariants\Concerns;
 use Splitstack\Invariants\Contracts\EnforcesInvariants;
 
 /**
- * Quarantine state for a subject implementing
- * {@see EnforcesInvariants}.
- *
- * Satisfies the quarantine() / isQuarantined() half of the contract without
- * any reflection or framework dependency.
+ * Quarantine state for a subject implementing {@see EnforcesInvariants}.
  */
 trait HasQuarantine
 {
