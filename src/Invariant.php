@@ -4,6 +4,10 @@ namespace Splitstack\Invariants;
 
 use Closure;
 use Splitstack\Invariants\Contracts\EnforcesInvariants;
+use Splitstack\Invariants\Exceptions\InvalidInvariantDefinitionException;
+use Splitstack\Invariants\Exceptions\MissingSubjectException;
+use Splitstack\Invariants\Exceptions\StrictViolationException;
+use Splitstack\Invariants\Exceptions\UncorrectablePropertyException;
 use Throwable;
 
 class Invariant
@@ -29,15 +33,15 @@ class Invariant
         public readonly mixed $event = null,
     ) {
         if ($this->policy === HydrationPolicy::AutoCorrect && $this->touches === []) {
-            throw new \RuntimeException('AutoCorrect policy requires at least one touched property to correct.');
+            throw InvalidInvariantDefinitionException::autoCorrectWithoutTouches();
         }
 
         if ($this->policy === HydrationPolicy::AutoCorrect && $this->default === null) {
-            throw new \RuntimeException('AutoCorrect policy requires a default value to correct to.');
+            throw InvalidInvariantDefinitionException::autoCorrectWithoutDefault();
         }
 
         if ($this->policy === HydrationPolicy::Lenient && $this->touches === []) {
-            throw new \RuntimeException('Lenient policy requires at least one touched property to allow ignoring.');
+            throw InvalidInvariantDefinitionException::lenientWithoutTouches();
         }
     }
 
@@ -93,7 +97,7 @@ class Invariant
 
         if ($this->touches !== []) {
             if ($subject === null) {
-                throw new \RuntimeException('An invariant with touches needs a subject (pass it to assert() or via on()).');
+                throw MissingSubjectException::forTouches();
             }
 
             $passes = true;
@@ -139,7 +143,7 @@ class Invariant
 
         try {
             match ($this->policy) {
-                HydrationPolicy::Strict => throw new \DomainException($this->message),
+                HydrationPolicy::Strict => throw new StrictViolationException($this->message),
                 HydrationPolicy::Lenient => $this->handleLenient($subject),
                 HydrationPolicy::Quarantine => $this->handleQuarantine($subject),
                 HydrationPolicy::AutoCorrect => $this->handleAutoCorrect($subject),
@@ -154,14 +158,14 @@ class Invariant
     private function handleAutoCorrect(?EnforcesInvariants $subject = null): void
     {
         if ($subject === null) {
-            throw new \RuntimeException('AutoCorrect policy requires a subject and property to correct.');
+            throw MissingSubjectException::forAutoCorrect();
         }
 
         foreach ($this->touches as $property) {
             if (property_exists($subject, $property) || method_exists($subject, '__set')) {
                 $subject->{$property} = $this->default;
             } else {
-                throw new \RuntimeException("Property {$property} does not exist on the subject.");
+                throw new UncorrectablePropertyException($property);
             }
         }
     }
@@ -174,7 +178,7 @@ class Invariant
     private function handleQuarantine(?EnforcesInvariants $subject = null): void
     {
         if ($subject === null) {
-            throw new \RuntimeException('Quarantine policy requires a subject implementing EnforcesInvariants.');
+            throw MissingSubjectException::forQuarantine();
         }
 
         $subject->quarantine($this->message);

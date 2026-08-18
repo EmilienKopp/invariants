@@ -37,7 +37,7 @@ $email = User::find($id)->email;
 Invariant::make(
     rule: fn () => $email !== '' && str_contains($email, '@'),
     message: 'Email must be valid',
-)->assert(); // throws DomainException on failure (policy: HydrationPolicy::Strict by default)
+)->assert(); // throws StrictViolationException on failure (policy: HydrationPolicy::Strict by default)
 
 // Touched rule: reads properties off a subject.
 Invariant::make(
@@ -93,7 +93,7 @@ The `policy:` argument decides what happens when a rule fails:
 
 | Policy        | Behavior on violation                                  | Requires              |
 | ------------- | ------------------------------------------------------ | --------------------- |
-| `Strict`      | throws `DomainException` (default)                     | —                     |
+| `Strict`      | throws `StrictViolationException` (default)            | —                     |
 | `Lenient`     | ignores the violated property, silent afterward        | `touches`             |
 | `Quarantine`  | calls `$subject->quarantine($message)`, does not throw | subject               |
 | `AutoCorrect` | rewrites each touched property to `default`            | `touches` + `default` |

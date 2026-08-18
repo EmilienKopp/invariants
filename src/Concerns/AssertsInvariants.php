@@ -7,6 +7,7 @@ use Splitstack\Invariants\Attributes\InvariantEvent;
 use Splitstack\Invariants\Contracts\EnforcesInvariants;
 use Splitstack\Invariants\Events\InvariantViolated;
 use Splitstack\Invariants\Exceptions\InvariantViolationException;
+use Splitstack\Invariants\Exceptions\StrictViolationException;
 use Splitstack\Invariants\Invariant;
 use Splitstack\Invariants\Support\EventDispatcher;
 use Splitstack\Invariants\Support\InvariantReflector;
@@ -39,7 +40,7 @@ trait AssertsInvariants
 
             try {
                 $invariant->assert($this);
-            } catch (\DomainException|\LogicException $e) {
+            } catch (StrictViolationException $e) {
                 $this->dispatchInvariantEvent($dispatcher, $method, $invariant);
 
                 throw new InvariantViolationException($label, $e->getMessage(), $e);
